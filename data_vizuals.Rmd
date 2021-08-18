@@ -1,0 +1,186 @@
+---
+title: "data Viz real"
+author: "Allie Cole"
+date: "8/18/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# General use packages:
+library(tidyverse)
+library(here)
+library(janitor)
+library(lubridate)
+
+# Specifically for plots:
+library(patchwork)
+library(ggrepel)  #replusive labels
+library(gghighlight) 
+library(paletteer) #for colors 
+library(ggExtra) #for marginal plots
+library(ggbeeswarm) #for beeswarm plots
+
+# Some more data to look at
+library(gapminder)
+
+# Spatial
+library(sf)
+```
+
+
+```{r}
+# get the lizards data 
+
+lizards <- read_csv(here("data_tidy", "lizards.csv"))
+
+```
+
+### Make a histogram (really bad one)
+
+```{r}
+#lizard weights
+
+ggplot(data = lizards, aes(x = weight)) +
+  geom_histogram(fill = "blue", 
+                 color = "green", 
+                 size = 1.2, #borderline
+                 linetype = "dotdash")
+```
+
+
+### Make a scatter plot 
+
+```{r}
+#length on x and total weight on y 
+
+ggplot(data = lizards, aes(x = total_length, y = weight)) +
+  geom_point(shape = 123, 
+             fill = "green", 
+             color = "purple", 
+             alpha = 0.5, 
+             size = 4)
+```
+
+
+### Make a bubble plot 
+
+
+```{r}
+# color of point changes based on common name and size vaires based on total length 
+
+ggplot(data = lizards, aes(x = total_length, y = weight)) +
+  geom_point(aes(color = common_name, 
+                 size = total_length),
+             shape = 22, fill = "light green") +
+  theme_minimal()
+
+```
+
+### Facet_grid v Facet_wrap
+
+
+
+```{r}
+ggplot(data = lizards, aes(x = total_length, y = weight)) +
+  geom_point(aes(color = common_name)) +
+  theme_minimal() +
+  facet_wrap(~common_name)
+```
+
+
+```{r}
+ggplot(data = lizards, aes(x = total_length, y = weight)) +
+  geom_point(aes(color = common_name)) +
+  theme_minimal() +
+  facet_grid(sex ~ tail)
+```
+
+### Getting things in order!
+
+```{r}
+#lizard count by common name 
+
+lizard_count <- lizards %>% 
+  group_by(common_name) %>% 
+  summarize(count = n())
+
+# same thing 
+
+##lizard_count <- lizards %>% count(common_name)
+
+
+
+ggplot(data = lizard_count, 
+       aes(y = fct_reorder(common_name, count), 
+                                x = count)) + 
+         geom_col(aes(color = common_name, fill = common_name)) +
+        labs(x = "Lizard Counts",
+             y = "Common Name"
+       )
+  
+```
+
+
+Try converting commonname to an ordered factor outside of ggplot 
+
+```{r}
+common_name_or <- lizard_count %>% 
+  mutate(common_name = fct_reorder(common_name, count))
+```
+
+
+### Playing with scales!
+#### Axis cale breaks, limits and labels 
+
+```{r}
+ggplot(data = lizards, aes(x = total_length, y = weight)) +
+  geom_point() +
+  scale_x_continuous(breaks = c(0, 100, 250, 500), 
+                     limits = c(0, 500), 
+                     expand = c(0, 0)) #gets rid of the space to the side
+```
+
+
+```{r}
+lizards_date <- lizards %>% 
+  mutate(date = mdy(date)) %>% 
+  group_by(date) %>% 
+  summarise(count = n())
+
+
+ggplot(data = lizards_date, aes(x = date, y = count)) +
+  geom_line() + 
+  scale_x_date(date_breaks ="3 years", 
+               date_labels = "%Y")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
