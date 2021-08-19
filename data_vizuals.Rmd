@@ -157,23 +157,174 @@ ggplot(data = lizards_date, aes(x = date, y = count)) +
 ```
 
 
+```{r}
+ggplot(data = lizards, aes(x = total_length, y = weight)) +
+  geom_point(aes(color = weight)) +
+  scale_color_stepsn(colors = c("purple", "green", "blue", "pink"), 
+                     breaks = c(0, 20, 40, 50))
+```
+
+### Update a color scheme using a palette in paletter 
+make a boxplot with common name on y and total lenth on teh x with color changing based on common name
+
+```{r}
+lizards_fct <- lizards %>% 
+  mutate(common_name = fct_reorder(common_name, .x = total_length, .fun = median))
+
+ggplot(data = lizards_fct, aes(x = total_length, y = common_name)) +
+  geom_boxplot(aes(fill = common_name), show.legend = FALSE) +
+  scale_fill_paletteer_d(palette = "colorBlindness::ModifiedSpectralScheme11Steps")
+```
+
+```{r}
+ggplot(data = lizards, aes(x = total_length, y = weight)) +
+  geom_point() +
+  theme(
+    panel.background = element_rect(fill = "light yellow", 
+                                    color = "purple", 
+                                    size = 5), 
+    panel.grid.major.x = element_line(color = "green"), 
+    panel.grid.minor.x = element_line(color = "light green"), 
+    panel.grid.major.y = element_line(color = "blue"), 
+    panel.grid.minor.y = element_line(color = "light blue"), 
+    plot.background = element_rect(fill = "pink"), 
+    axis.text.x = element_text(color = "blue"), 
+    axis.text.y = element_text(color = "green"), 
+    axis.title = element_text(color = "red")
+  )
+```
+
+## DAY 9 CONTINUATION of DATA VIZ
+
+### ggrepel 
+
+make a subset from lizards called ww_lizards that only contains western whiptails from site sand 
+
+```{r}
+ww_lizards <- lizards %>% 
+  filter(common_name == "western whiptail", site == "sand")
 
 
+ggplot(data = ww_lizards, aes(x = total_length, y = weight)) +
+  geom_point() + 
+  geom_text_repel(aes(label = toe_num), size = 4)
+
+```
+
+```{r}
+gapminder <- gapminder %>% 
+  filter(continent == "Europe", year == "1972")
+
+# filter for  eurpe create a plot of gdp per capita o x and life expecnecy on teh y labeled by country nam e
+
+ggplot(data = gapminder, aes(x = gdpPercap, y = lifeExp)) +
+  geom_point() + 
+  geom_text_repel(aes(label = country), overlap = 10)
+
+```
 
 
+### gghighlight 
+
+```{r}
+p <- ggplot(data = lizards, aes(x = total_length, y = weight)) +
+  geom_point(aes(color = common_name))
 
 
+p + gghighlight(toe_num == 250, label_key = toe_num)
+```
+
+```{r}
+q <- ggplot(data = lizards, aes(x = total_length, y = weight)) +
+  geom_line(aes(color = common_name)) + 
+  gghighlight(max(weight > 30), label_key = common_name)
+
+q
+```
 
 
+### Patchwork for compound figures 
+so its easier to put multiple figures together 
+
+```{r}
+
+(((p | q ) / q ) + q * p ) /q & theme_classic()
+
+```
+
+## Explore new graph types 
 
 
+### Marginal Plots (ggextra)
+
+```{r}
+whiptail <- lizards %>% 
+  filter(common_name == "western whiptail") %>% 
+  drop_na(total_length, weight) 
+
+ggplot(data = whiptail, aes(x = total_length, y = weight)) + 
+  geom_point() + 
+  geom_rug()
+```
+
+marginal blot with box plots 
+
+```{r}
+plot <- ggplot(data = whiptail, aes(x = total_length, y = weight)) + 
+  geom_point(aes(color = sex), size = 2) + 
+  scale_color_manual(values = c("cyan4", "goldenrod", "green"), 
+                     name = "Sex", 
+                     labels = c("female", "juvenile", "male")) + 
+    theme_classic() + 
+  theme(legend.position = "bottom")
+
+ggMarginal(plot, type = "boxplot", groupColour = TRUE)
+```
 
 
+### beeswarm plots
+
+```{r}
+ggplot(data = whiptail, aes(x = sex, y = weight)) + 
+  geom_beeswarm() + 
+  geom_violin(fill = NA) + 
+  geom_boxplot(fill = NA)
+```
+
+### HEat map with geom_tile() 
+
+make a new data frame called lizars counts with date convered to class date and  then count by year and common name the number of lizards observed
+```{r}
+lizard_count <- lizards %>% 
+  mutate(date = mdy(date)) %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  group_by(year, common_name) %>% 
+  summarize(count = n())
 
 
+ggplot(data = lizard_count, aes(x = year, y = common_name)) +
+  geom_tile(aes(fill = count)) + 
+  geom_text(aes(label = count), color = "white", size = 2) + 
+  scale_fill_viridis_c() #can also do the bottom part, this one is colorblind friendly 
+  scale_fill_gradientn(colors = c("goldenrod", "cyan4", "green", "purple", ))
+```
+
+### Gonna make a map!
+
+```{r}
+jornada_veg <- read_sf(here("data_raw", "spatial_vegetation", "doc.kml")) %>% 
+  select(Name) %>% 
+  clean_names()
 
 
-
+ggplot(data = jornada_veg) + 
+  geom_sf(aes(fill = name), color = "white", size = 0.1) +
+  scale_fill_paletteer_d(palette = "ggthemes::manyeys") + 
+  labs(x = "Longitude", 
+       y = "Latitude", 
+       fill = "Dominnt Vegatation") 
+  
+```
 
 
 
